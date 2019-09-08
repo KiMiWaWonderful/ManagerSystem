@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        body, html{width: 100%;height: 100%;margin:0;font-family:"微软雅黑";}
+        #allmap{height:600px;width:100%;}
+        #r-result{width:100%; font-size:14px;}
+        * {
+            margin: 0;
+            padding: 0;
+            padding: 0;
+            font-size: 13pt;
+            /*background: #f9f9f9;*/
+        }
+        #menu {
+            font:12px verdana, arial, sans-serif;
+            /*background: #f9f9f9;*/
+        }
+        #menu, #menu li {
+            list-style:none;
+            padding:0;
+            margin:0;
+            /*background: #f9f9f9;*/
+        }
+        #menu ul {
+            display: inline;
+            position: absolute;
+            width: 100%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            /*背景颜色，为灰色*/
+            background: #f9f9f9;
+        }
+        #menu li {
+            float:left;
+            position: relative;
+            padding: 20px;
+            font-size: 24px;
+            /*background:#00A600;*/
+            /*color: #ffffff;*/
+            line-height: 1;
+            transition: 0.2s all linear;
+            cursor: pointer;
+            list-style: none;
+            /*背景颜色，为灰色*/
+            background: #f9f9f9;
+            margin: auto;
+        }
+        #menu li a {
+            /*background:#fff;*/
+            display:block;
+            /* 如果是中英文混排的文字，建议用固定宽度
+            width:150px;
+            height:30px;
+            line-height:30px;
+            text-align:center;
+            */
+            padding:8px 50px;
+            /*background:#3A4953;*/
+            /*color:#000;*/
+            text-decoration:none;
+            /*border-right:1px solid #000;*/
+        }
+        #menu li a:hover {
+            /*悬浮之后背景改变的颜色*/
+            background:#f9f9f9;
+            /*悬浮之后字体改变的颜色*/
+            /*color:#fff;*/
+            text-decoration:none;
+            /*border-right:1px solid #000;*/
+        }
+        #menu li a.last {
+            border-right:0; /* 去掉左侧边框 */
+        }
+        /*#menu li::before {*/
+            /*content: '';*/
+            /*position: absolute;*/
+            /*top: 0;*/
+            /*left: 100%;*/
+            /*width: 0;*/
+            /*height: 100%;*/
+            /*border-bottom: 2px solid #000;*/
+            /*transition: 0.2s all linear;*/
+        /*}*/
+        /*#menu li:hover::before {*/
+            /*width: 100%;*/
+            /*top: 0;*/
+            /*left: 0;*/
+            /*transition-delay: 0.1s;*/
+            /*border-bottom-color: #000;*/
+            /*z-index: -1;*/
+        /*}*/
+        /*#menu li:hover~li::before {*/
+            /*left: 0;*/
+        /*}*/
+        #menu li:active {
+            /*background: #000;*/
+            color: #fff;
+        }
+
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=qVixkQ96uQ7eQ2WpRYzGeaV4LfOqByaw"></script>
+    <!--JQuery-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.0/jquery.js"></script>
+    <!--引入静态资源-->
+    <link rel="stylesheet" th:href="@{/css/selectFilter.css}" type="text/css" >
+    <script th:src="@{/js/selectFilter.js}"></script>
+    <!--bootstrap-->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <title>定位</title>
+</head>
+<body>
+<nav>
+    <ul id="menu">
+        <li><a href="http://47.101.181.42:8080/HomePage" >首页</a></li>
+        <li><a href="http://47.101.181.42:8080/Map" >地图</a></li>
+        <li><a href="http://47.101.181.42:8080/Draw" >绘图</a></li>
+        <li><a href="http://47.101.181.42:8080/LocateAndDraw">定位和绘图</a></li>
+    </ul>
+    <ul>
+        <!--<div style="text-align: right;padding-top:30px;">-->
+            <input type="text" placeholder="请输入电动车编号..."  size="26" id="string">
+            <button type="button" class="btn btn-default " onclick="sendToBack()">
+                <!--<span class="glyphicon glyphicon-search" aria-hidden="true"></span>-->
+                发送
+            </button>
+        <select class="refreshChoice" name="refreshChoice"> <!--别把class写成calss了ヽ(●-`Д´-)ノ-->
+            <option  selected="selected" id="manual" value="手动刷新"  >手动刷新</option> <!--设置手动刷新为默认选项，但是在火狐上好像有bug-->
+            <option id="auto" value="自动刷新" >自动刷新</option>
+        </select>
+        <div id="manualDiv" class="manualDiv" style="text-align:right">
+            <button id="getCurrentPosition" type="button" class="btn btn-info btn-default" onclick="changeMarkerPosition()">刷新</button>
+        </div>
+        <!--</div>-->
+    </ul>
+
+</nav>
+
+<div id="allmap"></div>
+<div id="r-result">
+</div>
+</body>
+</html>
+<script type="text/javascript">
+    // 百度地图API功能
+    var map = new BMap.Map("allmap");
+    //map.centerAndZoom(new BMap.Point(116.331398,39.897445),11);
+    map.centerAndZoom("广东海洋大学",17);
+    map.enableScrollWheelZoom(true);
+    var timer;
+
+    var navigationControl = new BMap.NavigationControl({
+        anchor : BMAP_ANCHOR_TOP_LEFT,
+        type : BMAP_NAVIGATION_CONTROL_LARGE,
+        enableGeolocation : true
+    });
+    map.addControl(navigationControl);
+
+    //发送输入框的数据到后台
+    function sendToBack() {
+        var string = document.getElementById("string").value;
+        alert(string);
+
+        //发送到后台
+       $.ajax({
+           async:false,
+           url:'http://47.101.181.42:8080/serialPort/sendToPort',
+           type:'POST',
+           data:{'string': string},
+           dataType:'json',
+           success:function (data) {
+               alert(data);
+           }
+       });
+    }
+    // 用经纬度设置地图中心点
+    //百度源码
+    function theLocation(){
+        if(document.getElementById("longitude").value != "" && document.getElementById("latitude").value != ""){
+            map.clearOverlays();
+            var new_point = new BMap.Point(document.getElementById("longitude").value,document.getElementById("latitude").value);
+            var marker = new BMap.Marker(new_point);  // 创建标注
+            map.addOverlay(marker);              // 将标注添加到地图中
+            map.panTo(new_point);
+        }
+    }
+    
+    function getCurrentLocation() {
+        var position=new Array();
+        console.log("执行了getCurrentLocation");
+        $.ajax({
+            async:false,
+            url:'http://47.101.181.42:8080/serialPort/sendLocation',
+            type:'GET',
+            dataType:'json',
+            success: function(jsonArray){
+                console.log("jsonArray:"+jsonArray);
+                console.log("成功");
+                console.log("jsonArray[0].longitude:"+jsonArray[0].longitude);
+                console.log("jsonArray[0].latitude:"+jsonArray[0].latitude);
+                position.push(jsonArray[0].longitude);
+                position.push( jsonArray[0].latitude);
+                console.log("position"+position);
+            },
+            error :function () {
+                alert("error");
+                console.log("失败")
+            }
+        });
+
+        // var newPoint = new BMap.Point(position[0],position[1]);
+        // showInfo(newPoint)
+        return position;
+    }
+
+    var trackMap = new Array();
+    function changeMarkerPosition() {
+        myPositon = getCurrentLocation();
+        console.log("myPosition:"+myPositon);
+        console.log("执行了changeMarkerPosition");
+        setTimeout(function () {
+            map.clearOverlays();
+            //经度在前纬度在后
+            var new_point = new BMap.Point(myPositon[0],myPositon[1]);
+            trackMap.push(new_point);
+            //var  carIcon = new BMap.Icon("http://lbsyun.baidu.com/jsdemo/img/car.png", new BMap.Size(300,157));//创建一个小车的图标
+            // var marker = new BMap.Marker(new_point,{icon:carIcon});  // 创建标注
+            var marker = new BMap.Marker(new_point);  // 创建标注
+            map.addOverlay(marker);              // 将标注添加到地图中
+            marker.setAnimation(BMAP_ANIMATION_BOUNCE);//给marker设置动画
+            map.panTo(new_point);
+
+            if (trackMap.length > 2) {
+                map.addOverlay(new BMap.Polyline(
+                    [trackMap[trackMap.length-2], trackMap[trackMap.length - 1]],
+                    {strokeColor: "blue", strokeWeight: 3, strokeOpacity: 1, strokeStyle:"dashed"}));
+            }
+        },500);
+    }
+
+
+
+
+</script>
+
+
+
+<script>
+
+
+    //利用jq监测下拉菜单的状态
+    $(document).ready(function(){
+        $(".refreshChoice").change(function(){
+            // alert($(this).find("option:checked").attr("id")); 通过此方法能得到用户选择的option的id值，从而判断用户选择了哪个选项。
+
+            if ($(this).find("option:checked").attr("id")=="manual"){
+                $(document).ready(function(){
+                    $("#manualDiv").show();//如果选择了手动,就把面板显示出来
+                    clearInterval(timer);
+                    console.log("手动刷新");
+                });
+            }else if($(this).find("option:checked").attr("id")=="auto"){
+                $("#manualDiv").hide();//如果选择了自动，就把面板隐藏。
+                timer = setInterval(changeMarkerPosition,2000);
+                console.log("自动刷新");
+                //每隔5秒刷新一次点的坐标
+            }
+        });
+    });
+</script>
+
+
+

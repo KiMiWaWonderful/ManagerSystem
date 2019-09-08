@@ -1,0 +1,31 @@
+spring:
+  mvc:
+#    static-path-pattern: /static/**
+    static-path-pattern: /**
+  thymeleaf:
+#      #缓冲的配置
+    cache: false
+    check-template: true
+    check-template-location: true
+      #开启MVC thymeleaf 视图解析
+    enabled: true
+    encoding: utf-8
+    mode: HTML5
+#    prefix: classpath:/templates/
+    suffix: .html
+#  resources:
+#    static-locations: /static/**
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+  datasource:
+          url: jdbc:mysql://47.101.181.42:3306/mydata?serverTimezone=UTC&useSSL=false&useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true
+          username: root
+          password: 323900llmT
+          driver-class-name: com.mysql.jdbc.Driver
+
+
+
+
+
+#hibernate:
+#  dialect: org.hibernate.dialect.MySQL5Dialect

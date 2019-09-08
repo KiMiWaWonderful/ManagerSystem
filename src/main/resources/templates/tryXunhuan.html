@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html  xmlns:th="http://www.thymeleaf.org">
+<head >
+    <meta charset="UTF-8">
+    <!--JQuery-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.0/jquery.js"></script>
+    <title>尝试循环</title>
+    <style type="text/css">
+        table {
+            border: 1px solid black;
+            text-align: center;
+            border-collapse: collapse;
+        }
+        table thead th {
+            border: 1px solid black;
+        }
+        table tbody td {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+
+
+<table cellpadding="0" cellspacing="0">
+    <thead>
+    <th>编号</th>
+    <th>车主姓名</th>
+    <th>车牌号码</th>
+    </thead>
+
+    <tbody>
+    <tr th:each="carInfo:${carInfos}" >
+
+        <td th:text="${carInfo.id}"></td>
+
+        <td th:text="${carInfo.name}"></td>
+
+        <td th:text="${carInfo.number}"></td>
+
+    </tr>
+
+    </tbody>
+
+</table>
+</body>
+</html>

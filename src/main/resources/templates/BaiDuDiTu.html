@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        body, html,#allmap {width: 100%;height: 100%;overflow: hidden;margin:0;font-family:"微软雅黑";}
+        #allmap {width: 100%; height:600px;}
+        #result {width:100%;font-size:12px;}
+        /*dl,dt,dd,ul,li{*/
+            /*margin:0;*/
+            /*padding:0;*/
+            /*list-style:none;*/
+        /*}*/
+        p{font-size:12px;}
+        dt{
+            font-size:14px;
+            font-family:"微软雅黑";
+            font-weight:bold;
+            border-bottom:1px dotted #000;
+            padding:5px 0 5px 5px;
+            margin:5px 0;
+        }
+        dd{
+            padding:5px 0 0 5px;
+        }
+        /*li{*/
+            /*line-height:28px;*/
+        /*}*/
+        * {
+            margin: 0;
+            padding: 0;
+            padding: 0;
+            font-size: 13pt;
+            /*background: #f9f9f9;*/
+        }
+        #menu {
+            font:12px verdana, arial, sans-serif;
+            /*background: #f9f9f9;*/
+        }
+        #menu, #menu li {
+            list-style:none;
+            padding:0;
+            margin:0;
+            /*background: #f9f9f9;*/
+        }
+        #menu ul {
+            display: inline;
+            position: absolute;
+            width: 100%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            /*背景颜色，为灰色*/
+            background: #f9f9f9;
+        }
+        #menu li {
+            float:left;
+            position: relative;
+            padding: 20px;
+            font-size: 24px;
+            /*background:#00A600;*/
+            /*color: #ffffff;*/
+            line-height: 1;
+            transition: 0.2s all linear;
+            cursor: pointer;
+            list-style: none;
+            /*背景颜色，为灰色*/
+            background: #f9f9f9;
+            margin: auto;
+        }
+        #menu li a {
+            /*background:#fff;*/
+            display:block;
+            /* 如果是中英文混排的文字，建议用固定宽度
+            width:150px;
+            height:30px;
+            line-height:30px;
+            text-align:center;
+            */
+            padding:8px 50px;
+            /*background:#3A4953;*/
+            /*color:#000;*/
+            text-decoration:none;
+            /*border-right:1px solid #000;*/
+        }
+        #menu li a:hover {
+            /*悬浮之后背景改变的颜色*/
+            background:#f9f9f9;
+            /*悬浮之后字体改变的颜色*/
+            /*color:#fff;*/
+            text-decoration:none;
+            /*border-right:1px solid #000;*/
+        }
+        #menu li a.last {
+            border-right:0; /* 去掉左侧边框 */
+        }
+        #menu li:active {
+            /*background: #000;*/
+            color: #fff;
+        }
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=qVixkQ96uQ7eQ2WpRYzGeaV4LfOqByaw"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.0/jquery.js"></script>
+    <!--bootstrap-->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <title>地图首页</title>
+</head>
+<body>
+<nav>
+    <ul id="menu">
+        <li><a href="http://47.101.181.42:8080/HomePage">首页</a></li>
+        <li><a href="http://47.101.181.42:8080/Draw">绘图</a></li>
+        <li><a href="http://47.101.181.42:8080/Locate">定位</a></li>
+        <li><a href="http://47.101.181.42:8080/LocateAndDraw">定位和绘图</a></li>
+    </ul>
+    <!--<ul>-->
+        <div style="text-align: right;padding-top:30px;">
+            <input type="text" placeholder="请输入电动车编号..."  size="26" id="inputString">
+            <button type="button" class="btn btn-default " onclick="sendToBack()">
+                <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+            </button>
+
+            <!--<input type="button" value="保存" onclick="save()">-->
+        </div>
+    <!--</ul>-->
+</nav>
+
+<div id="allmap"></div>
+</body>
+</html>
+<script type="text/javascript">
+    // 百度地图API功能
+    var map = new BMap.Map("allmap");
+    //似乎12是显示市名在中心
+    map.centerAndZoom("广东海洋大学",17);
+    map.enableScrollWheelZoom(true);
+
+
+
+
+    var points = new Array();
+    var markers = new Array();
+    var jsonArrayCopy = new Array();
+
+    //获取后台发来的jsonArray,转换成坐标和标记显示在地图上
+    $.ajax({
+        async:false,
+        url:'http://47.101.181.42:8080/carInfo/getCarInfo',
+        type:'GET',
+        dataType:'json',
+        success: function(jsonArray){
+            console.log("jsonArray:"+jsonArray);
+            console.log("成功");
+            for(var i = 0; i < jsonArray.length; i++){
+
+                    var point  = new BMap.Point(jsonArray[i].lng,jsonArray[i].lat);
+                    points.push(point);
+                    var marker = new BMap.Marker(point);
+                    markers.push(marker);
+                    var info = "<div style='font-size:12px;'>" +
+                        "<b>编号:  </b>"+
+                        jsonArray[i].id +
+                        "</br><b>车主姓名:  </b>"+
+                        jsonArray[i].name+
+                        "</br><b>车牌号码:  </b>"+
+                        jsonArray[i].number +
+                        "</a></div>";
+
+                    showinfomessage(marker,info);
+                    map.addOverlay(marker);
+
+                    marker.setAnimation(BMAP_ANIMATION_BOUNCE);
+            }
+        },
+        error :function () {
+            alert("error");
+            console.log("失败")
+        }
+    });
+
+    function sendToBack() {
+        var string = document.getElementById("inputString").value;
+       // alert(string);
+
+        //发送id到后台并得到carInfo
+        $.ajax({
+            async:false,
+            url:'http://47.101.181.42:8080/carInfo/getFromFront',
+            type:'POST',
+            data:{'string': string},
+            dataType:'json',
+            success:function (jsonArray) {
+                console.log("jsonArray:"+jsonArray);
+                console.log("jsonArray:"+JSON.stringify(jsonArray));
+                console.log("成功");
+
+                var point  = new BMap.Point(jsonArray[0].lng,jsonArray[0].lat);
+                // console.log(point);
+                // var marker = new BMap.Marker(point);
+                // console.log(marker);
+
+                for(var i = 0; i<points.length;i++){
+
+                    var distance = (map.getDistance(points[i],point));  //获取两点距离
+                    if(distance == 0){
+                        var info = "<div style='font-size:12px;'>" +
+                            "<b>编号:  </b>"+
+                            jsonArray[0].id +
+                            "</br><b>车主姓名:  </b>"+
+                            jsonArray[0].name+
+                            "</br><b>车牌号码:  </b>"+
+                            jsonArray[0].number +
+                            "</a></div>";
+                        var infoWindow = new BMap.InfoWindow(info);  // 创建信息窗口对象
+                        markers[i].openInfoWindow(infoWindow);
+                        //showInfo(markers[i],info);
+                    }
+                }
+
+
+
+                // map.addOverlay(marker);
+                // marker.setAnimation(BMAP_ANIMATION_BOUNCE);
+                // var info = "<div style='font-size:12px;'>" +
+                //     "<b>编号:  </b>"+
+                //     jsonArray[0].id +
+                //     "</br><b>车主姓名:  </b>"+
+                //     jsonArray[0].name+
+                //     "</br><b>车牌号码:  </b>"+
+                //     jsonArray[0].number +
+                //     "</a></div>";
+                // var infoWindow = new BMap.InfoWindow(info);  // 创建信息窗口对象
+                //
+                // marker.openInfoWindow(infoWindow);
+
+            }
+        });
+
+
+    }
+
+
+    
+    function judege(point) {
+        for(var i = 0; i<points.length;i++){
+
+            var distance = (map.getDistance(points[i],point));  //获取两点距离,保留小数点后两位
+            if(distance == 0){
+                markers[i].openInfoWindow(infoWindow);
+            }
+        }
+    }
+
+    function showinfomessage(marker,info) {
+        var infoWindow = new BMap.InfoWindow(info);  // 创建信息窗口对象
+        marker.addEventListener("click", function(){
+           this.openInfoWindow(infoWindow);
+        });
+    }
+
+    // for(var i = 0; i<markers.length,jsonArrayCopy.length;i++){
+    //
+    //     console.log("进入for循环啦");
+    //     map.addOverlay(markers[i]);
+    //     var infoWindow =new BMap.InfoWindow("<div style='line-height:1.8em;font-size:12px;'>" +
+    //            "</br><b>编号:  </b>"+
+    //         jsonArrayCopy[i].num +
+    //            "</br><b>车主姓名:  </b>"+
+    //         jsonArrayCopy[i].name+
+    //            "</br><b>车牌号码:  </b>"+
+    //         jsonArrayCopy[i].number +
+    //            "</a></div>");
+    //     markers[i].setAnimation(BMAP_ANIMATION_BOUNCE);
+    //     markers[i].addEventListener("click",function () {
+    //                 this.openInfoWindow(infoWindow);
+    //             });
+    // }
+
+    //单击获取点击的经纬度,暂时屏蔽这个方法
+    // map.addEventListener("click",function(e){
+    //
+    //     //将这两点发送到后台
+    //     alert(e.point.lng + "," + e.point.lat);
+    //
+    //     var longg = e.point.lng;
+    //     var latii = e.point.lat;
+    //
+    //     $.ajax({
+    //         async:false,
+    //         url:'http://localhost:8080/point/addPoint',
+    //         type:'POST',
+    //         data:{'lng': e.point.lng, 'lat': e.point.lat},
+    //         //data:JSON.stringify({ longitude: e.point.lng, latitude: e.point.lat }),
+    //         dataType: 'json',
+    //         //contentType: 'application/x-www-form-urlencoded',
+    //         success:function (data) {
+    //         //console.log(data);
+    //             alert(data);
+    //     }
+    //         // error:function () {
+    //         //     alert("error");
+    //         // }
+    //     });
+    // });
+</script>

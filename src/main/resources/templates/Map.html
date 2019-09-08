@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        body, html,#allmap {width: 100%;height: 100%;overflow: hidden;margin:0;font-family:"微软雅黑";}
+        #allmap {width: 100%; height:500px; overflow: hidden;}
+        #result {width:100%;font-size:12px;}
+        dl,dt,dd,ul,li{
+            margin:0;
+            padding:0;
+            list-style:none;
+        }
+        p{font-size:12px;}
+        dt{
+            font-size:14px;
+            font-family:"微软雅黑";
+            font-weight:bold;
+            border-bottom:1px dotted #000;
+            padding:5px 0 5px 5px;
+            margin:5px 0;
+        }
+        dd{
+            padding:5px 0 0 5px;
+        }
+        li{
+            line-height:28px;
+        }
+    </style>
+    <!--加载百度地图-->
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=qVixkQ96uQ7eQ2WpRYzGeaV4LfOqByaw"></script>
+    <!--加载鼠标绘制工具-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
+    <!--加载检索信息窗口-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/SearchInfoWindow/1.4/src/SearchInfoWindow_min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/SearchInfoWindow/1.4/src/SearchInfoWindow_min.css" />
+    <!--判断点是否在某个区域内-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/GeoUtils/1.2/src/GeoUtils_min.js"></script>
+    <!--JQuery-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.0/jquery.js"></script>
+    <!-- CSS dependencies -->
+    <!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" type="text/css">-->
+    <!--<link rel="stylesheet" href="wireframe.css">-->
+    <!--引入bootstrap-->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <!-- <script   src="https://code.jquery.com/jquery-1.12.4.js"   integrity="sha256-Qw82+bXyGq6MydymqBxNPYTaUXXq7c8v3CwiYwLLNXU="   crossorigin="anonymous"></script>-->
+    <title>单击获取点击的经纬度</title>
+</head>
+<body>
+<nav class="nav nav-pills">
+    <div class="container">
+        <div >
+            <ul >
+                <p>
+                    刷新方式：
+                    <select class="refreshChoice" name="refreshChoice"> <!--别把class写成calss了ヽ(●-`Д´-)ノ-->
+                        <option  selected="selected" id="manual" value="手动刷新"  >手动刷新</option> <!--设置手动刷新为默认选项，但是在火狐上好像有bug-->
+                        <option id="auto" value="自动刷新" >自动刷新</option>
+                    </select>
+
+                <div >
+                    <button >刷新</button>
+                </div>
+
+                <div >
+                    <button onclick="drawPolygonAndSave()">绘图</button>
+                </div>
+
+                <div >
+                    <button onclick="save()">保存</button>
+                </div>
+
+                </p>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div id="allmap"></div>
+</body>
+</html>
+<script type="text/javascript">
+    // 百度地图API功能
+    //先初始化地图
+    var map = new BMap.Map("allmap",{minZoom:14,maxZoom:19});
+    var point = new BMap.Point(104.072222, 30.663469);
+    map.centerAndZoom(point, 12);
+
+
+
+    var navigationControl = new BMap.NavigationControl({
+        anchor : BMAP_ANCHOR_TOP_LEFT,
+        type : BMAP_NAVIGATION_CONTROL_LARGE,
+        enableGeolocation : true
+    });
+    map.addControl(navigationControl);
+    // var map = new BMap.Map("allmap");
+    // map.centerAndZoom("重庆",12);
+    //单击获取点击的经纬度
+    map.addEventListener("click",getClickPoint(e));
+
+    //获取点击的经纬度的函数
+    function getClickPoint(e) {
+        alert(e.point.lng + "," + e.point.lat);
+
+        var longg = e.point.lng;
+        var latii = e.point.lat;
+
+        //将这两点发送到后台
+        // $.ajax({
+        //     url:'http://localhost:8080/point/addPoint',
+        //     type:'POST',
+        //     data:{'lng': e.point.lng, 'lat': e.point.lat},
+        //     //data:JSON.stringify({ longitude: e.point.lng, latitude: e.point.lat }),
+        //     dataType: 'json',
+        //     //contentType: 'application/x-www-form-urlencoded',
+        //     success:function (data) {
+        //         //console.log(data);
+        //         alert(data);
+        //     }
+        //     // error:function () {
+        //     //     alert("error");
+        //     // }
+        // });
+    }
+    
+    function getPolygonPoint(e) {
+       var point = new BMap.Point(e.point.lng, e.point.lat);
+        console.log(point);
+        showInfo(point);
+    }
+
+    //开启画图事件
+    function drawPolygon(e) {
+        //自己拾取的点
+        var point;
+
+        //多边形的所有点
+        var points = new Array();
+
+        //描绘多边形的点数
+        var num = 0;
+
+        //标记
+        var markers = new Array();
+
+        //定义多边形
+        var secRingPolygon = new BMap.Polygon();
+        num++;
+        if(num<=3){
+            var point = e.point;
+            var marker = new BMap.Marker(point);
+            map.addOverlay(marker);
+            points.push(point);
+            markers.push(marker);
+            if(num==3){
+                secRingPolygon = new BMap.Polygon(points, {strokeColor:"red", strokeWeight:3, strokeOpacity:0.5});  //画多边形
+                map.addOverlay(secRingPolygon);   //增加多边形
+                secRingPolygon.enableEditing();
+                console.log(secRingPolygon);
+                // map.addEventListener("click",function(e){
+                //     point = new BMap.Marker(e.point.lng,e.point.lat);
+                //     console.log(point);
+                //     showInfo(point);
+                // });
+            }
+        }
+        if(num>3){
+            var pointt = e.point;
+            points.push(pointt);
+            markers[0].remove();
+            markers[1].remove();
+            markers[2].remove();
+            console.log(secRingPolygon);
+            // map.addEventListener("click",function(e){
+            //     point = new BMap.Marker(e.point.lng,e.point.lat);
+            //     console.log(point);
+            //     showInfo(point);
+            // });
+        }
+    }
+    //点击按钮绘图，开启绘图模式
+    function drawPolygonAndSave() {
+        map.removeEventListener("click",getPoint(e));
+        map.addEventListener("click",drawPolygon(e));
+    }
+
+    //点击save按钮触发的函数，也许不需要
+    function save() {
+        if (num > 0 && num < 3) {
+            alert("二级片区至少需要3个点");
+        } else {
+            var ayy = secRingPolygon.getPath();
+            var lngs_value = "";
+            var lats_value = "";
+            for (var i = 0; i < ayy.length; i++) {
+                if (i != ayy.length - 1) {
+                    lngs_value += secRingPolygon.getPath()[i].lng + ",";
+                    lats_value += secRingPolygon.getPath()[i].lat + ",";
+                } else {
+                    lngs_value += secRingPolygon.getPath()[i].lng;
+                    lats_value += secRingPolygon.getPath()[i].lat;
+                }
+            }
+            alert("多边形所有点的坐标为：" + lngs_value + "|" + lats_value);
+
+            //点击某个点，判断其是否在多边形内
+            map.addEventListener("click", getPolygonPoint(e));
+
+            // $.ajax({
+            //     url: 'http://localhost:8080/polygon/addPolygon',
+            //     type: 'POST',
+            //     data: {'polygonJson': JSON.stringify(points)},
+            //     dataType: 'json',
+            //     success: function (data) {
+            //         if (data == "success")
+            //             alert("提交成功");
+            //         else
+            //             alert("提交失败，请稍后再试");
+            //         return;
+            //     }
+            // });
+        }
+    }
+
+    //判断所点击的点是否在绘制的图形的区域内
+    function showInfo(point) {
+
+        //判断点是否在
+        if(BMapLib.GeoUtils.isPointInPolygon(point,secRingPolygon)){
+            alert("在区域内");
+            // var infoWindow = new BMap.InfoWindow("在区域内");
+            // thisMarker.openInfoWindow(infoWindow); //图片加载完后重绘infoWindow
+        }else
+        {
+            alert("不在区域内");
+            console.log(secRingPolygon);
+            // var infoWindow = new BMap.InfoWindow("不在区域内");
+            // thisMarker.openInfoWindow(infoWindow); //图片加载完后重绘infoWindow
+        }
+        map.removeEventListener("click");
+    }
+
+
+</script>

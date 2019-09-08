@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        /*body, html{width: 100%;height: 100%;margin:0;font-family:"微软雅黑";}*/
+        /*#allmap{height:600px;width:100%;}*/
+
+        body, html{width: 100%;height: 100%;overflow: hidden;margin:0;}
+
+        #allmap {margin-right: 300px;height: 100%;overflow: hidden;}
+        #result {border-left:1px dotted #999;height:100%;width:295px;position:absolute;top:0px;right:0px;font-size:12px;}
+
+        dl,dt,dd,ul,li{
+
+            margin:0;
+
+            padding:0;
+
+            list-style:none;
+
+        }
+
+        p{font-size:12px;}
+
+        dt{
+
+            font-size:14px;
+
+            font-family:"微软雅黑";
+
+            font-weight:bold;
+
+            border-bottom:1px dotted #000;
+
+            padding:5px 0 5px 5px;
+
+            margin:5px 0;
+
+        }
+
+        dd{
+
+            padding:5px 0 0 5px;
+
+        }
+
+        li{
+
+            line-height:28px;
+
+        }
+        #menu {
+            font:12px verdana, arial, sans-serif;
+            /*background: #f9f9f9;*/
+        }
+        #menu, #menu li {
+            list-style:none;
+            padding:0;
+            margin:0;
+            /*background: #f9f9f9;*/
+        }
+        #menu ul {
+            display: inline;
+            position: absolute;
+            width: 100%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            /*背景颜色，为灰色*/
+            background: #f9f9f9;
+        }
+        #menu li {
+            float:left;
+            position: relative;
+            padding: 20px;
+            font-size: 24px;
+            /*background:#00A600;*/
+            /*color: #ffffff;*/
+            line-height: 1;
+            transition: 0.2s all linear;
+            cursor: pointer;
+            list-style: none;
+            /*背景颜色，为灰色*/
+            background: #f9f9f9;
+            margin: auto;
+        }
+        #menu li a {
+            /*background:#fff;*/
+            display:block;
+            /* 如果是中英文混排的文字，建议用固定宽度
+            width:150px;
+            height:30px;
+            line-height:30px;
+            text-align:center;
+            */
+            padding:8px 50px;
+            /*background:#3A4953;*/
+            /*color:#000;*/
+            text-decoration:none;
+            /*border-right:1px solid #000;*/
+        }
+        #menu li a:hover {
+            /*悬浮之后背景改变的颜色*/
+            background:#f9f9f9;
+            /*悬浮之后字体改变的颜色*/
+            /*color:#fff;*/
+            text-decoration:none;
+            /*border-right:1px solid #000;*/
+        }
+        #menu li a.last {
+            border-right:0; /* 去掉左侧边框 */
+        }
+        #menu li:active {
+            /*background: #000;*/
+            color: #fff;
+        }
+
+    </style>
+    <!--JQuery-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.0/jquery.js"></script>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=qVixkQ96uQ7eQ2WpRYzGeaV4LfOqByaw"></script>
+
+
+    <!--加载鼠标绘制工具-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
+
+    <!--加载检索信息窗口-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/SearchInfoWindow/1.4/src/SearchInfoWindow_min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/SearchInfoWindow/1.4/src/SearchInfoWindow_min.css" />
+
+    <!--判断点是否在某个区域内-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/GeoUtils/1.2/src/GeoUtils_min.js"></script>
+    <!--&lt;!&ndash;引入静态资源&ndash;&gt;-->
+    <!--<link rel="stylesheet" th:href="@{/css/selectFilter.css}" type="text/css" >-->
+    <!--<script th:src="@{/js/selectFilter.js}"></script>-->
+    <!--bootstrap-->
+    <!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">-->
+    <title>定位和绘图</title>
+</head>
+
+<body>
+
+<div id="allmap" style="overflow:hidden;zoom:1;position:relative;">
+    <div id="map" style="height:100%;-webkit-transition: all 0.5s ease-in-out;transition: all 0.5s ease-in-out;"></div>
+    <div id="showPanelBtn" style="position:absolute;font-size:14px;top:50%;margin-top:-95px;right:0px;width:20px;padding:10px 10px;color:#999;cursor:pointer;text-align:center;height:170px;background:rgba(255,255,255,0.9);-webkit-transition: all 0.5s ease-in-out;transition: all 0.5s ease-in-out;font-family:'微软雅黑';font-weight:bold;">显示检索结果面板<br/><</div>
+    <div id="panelWrap" style="width:0px;position:absolute;top:0px;right:0px;height:100%;overflow:auto;-webkit-transition: all 0.5s ease-in-out;transition: all 0.5s ease-in-out;">
+        <div style="width:20px;height:200px;margin:-100px 0 0 -10px;color:#999;position:absolute;opacity:0.5;top:50%;left:50%;" id="showOverlayInfo">此处用于展示覆盖物信息</div>
+        <div id="panel" style="position:absolute;"></div>
+    </div>
+</div>
+
+
+<!--右边窗口-->
+<div id="result">
+
+    <dl>
+
+        <dt>是否进行线或面积的计算(单位米)</dt>
+        <dd>
+        <ul>
+            <li><label><input type="radio" name="openClose" onclick="drawingManager.enableCalculate()"/>打开</label>  <label><input type="radio" name="openClose" onclick="drawingManager.disableCalculate()"  checked="checked"/>关闭</label></li>
+        </ul>
+        </dd>
+
+
+        <dt>覆盖物操作</dt>
+        <dd>
+            <ul>
+                <li>
+                    <input type="button" value="获取绘制的覆盖物个数" onclick="alert(overlays.length)"/>
+                    <input type="button" value="清除所有覆盖物" onclick="clearAll()"/>
+                    <input type="button" value="获取最后一个覆盖物信息" id="getLastOverLay"/>
+                </li>
+            </ul>
+        </dd>
+
+        <dt>定位操作</dt>
+        <dd>
+            <ul>
+                <li>
+                    <select class="refreshChoice" name="refreshChoice">
+                    <option  selected="selected" id="manual" value="手动刷新"  >手动刷新</option> <!--设置手动刷新为默认选项，但是在火狐上好像有bug-->
+                    <option id="auto" value="自动刷新" >自动刷新</option>
+                    </select>
+                    （默认手动刷新）
+                </li>
+                <li id = "manualButton">
+                    <button id="getCurrent" type="button" class="btn btn-info btn-default" onclick="changeMarkerPosition()">刷新</button>
+                </li>
+            </ul>
+        </dd>
+
+        <dt>向串口发送数据</dt>
+        <dd>
+            <ul>
+                <li>
+                    <input type="text" placeholder="请输入电动车编号..."  size="26" id="inputString">
+                    <button type="button" class="btn btn-default " onclick="sendToBack()">
+                        发送
+                    </button>
+                </li>
+            </ul>
+        </dd>
+
+    </dl>
+
+
+
+</div>
+</body>
+</html>
+<script type="text/javascript">
+    // 百度地图API功能
+    var map = new BMap.Map("map");
+    //map.centerAndZoom(new BMap.Point(116.331398,39.897445),11);
+    map.centerAndZoom("广东海洋大学",17);
+    map.enableScrollWheelZoom(true);
+    var timer;
+
+    var navigationControl = new BMap.NavigationControl({
+        anchor : BMAP_ANCHOR_TOP_LEFT,
+        type : BMAP_NAVIGATION_CONTROL_LARGE,
+        enableGeolocation : true
+    });
+    map.addControl(navigationControl);
+
+    c("getLastOverLay").onclick = function(){
+
+        if(overlays.length){
+            alert(overlays[overlays.length - 1]);
+        }else{
+            alert("没有覆盖物");
+        }
+
+    };
+
+   // var c = $.noConflict();
+    $(document).ready(function () {
+       $(".refreshChoice").change(function () {
+          if($(this).find("option:checked").attr("id")=="manual"){
+              $(document).ready(function () {
+                 // $("#manualDiv").show();
+                  $("#manualButton").show();
+                  clearInterval(timer);
+                  console.log("手动刷新");
+              });
+          }else if($(this).find("option:checked").attr("id")=="auto"){
+              $("#manualButton").hide();
+              timer = setInterval(changeMarkerPosition,2000);
+              console.log("自动刷新");
+          }
+       });
+    });
+
+    //信息窗口的内容定义
+    var content = '<div style="margin:0;line-height:20px;padding:2px;">' +
+        '地址：北京市海淀区上地十街10号<br/>电话：(010)59928888<br/>简介：百度大厦位于北京市海淀区西二旗地铁站附近，为百度公司综合研发及办公总部。' +
+
+        '</div>';
+
+
+    //创建带信息窗口的poi点
+
+    var searchInfoWindow = new BMapLib.SearchInfoWindow(map, content, {
+
+        title  : "百度大厦",      //标题
+
+        width  : 290,             //宽度
+
+        height : 105,              //高度
+
+        panel  : "panel",         //检索结果面板
+
+        enableAutoPan : true,     //自动平移
+
+        searchTypes   :[
+
+            BMAPLIB_TAB_SEARCH,   //周边检索
+
+            BMAPLIB_TAB_TO_HERE,  //到这里去
+
+            BMAPLIB_TAB_FROM_HERE //从这里出发
+
+        ]
+
+    });
+
+    var overlays = [];
+
+    //在地图上做的标记
+    var marker;
+
+    //回调获得覆盖物信息
+    var overlaycomplete = function(e){
+
+        overlays.push(e.overlay);
+
+        var result = "";
+        result = "<p>";
+        result += e.drawingMode + ":";
+
+        //坐标模式
+        if (e.drawingMode == BMAP_DRAWING_MARKER) {
+
+            //单击获取点击的经纬度,暂时屏蔽这个方法
+            // map.addEventListener("click",function(e){
+            //
+            //     //将这两点发送到后台
+            //     alert(e.point.lng + "," + e.point.lat);
+            //
+            //     var longg = e.point.lng;
+            //     var latii = e.point.lat;
+            //
+            //     $.ajax({
+            //         async:false,
+            //         url:'http://localhost:8080/point/addPoint',
+            //         type:'POST',
+            //         data:{'lng': e.point.lng, 'lat': e.point.lat},
+            //         dataType: 'json',
+            //         success:function (data) {
+            //             alert(data);
+            //     }
+            //     });
+            // });
+
+            result += ' 坐标：' + e.overlay.getPosition().lng + ',' + e.overlay.getPosition().lat;
+
+            if (c('isInfowindow').checked) {
+                searchInfoWindow.open(e.overlay);
+            }
+        }
+
+        //画圆
+        if (e.drawingMode == BMAP_DRAWING_CIRCLE) {
+
+            result += ' 半径：' + e.overlay.getRadius();
+            result += "<br>";
+            result += ' 中心点：' + e.overlay.getCenter().lng + "," + e.overlay.getCenter().lat;
+
+            var points = new Array();
+            points.push(e.overlay.getRadius());
+            points.push(e.overlay.getCenter());
+           // console.log(points);
+
+            var secCircle = new BMap.Polygon(e.overlay.getPath());
+            // console.log(e.overlay.getPath());
+            // console.log(secCircle);
+
+           // var point = new BMap.Point(110.307239,21.159671);
+            var newPosition = getCurrentLocation();
+            console.log("newPosition:"+newPosition);
+            var newPoint = new BMap.Point(newPosition[0],newPosition[1]);
+            console.log("newPoint:"+newPoint);
+
+            if(newPoint != undefined){
+                showInfo(secCircle,newPoint);
+            }else {
+                alert("point is undefined");
+            }
+
+            jQuery.ajax({
+                async: false,
+                url:'http://47.101.181.42:8080/polygon/addPolygon',
+                type:'POST',
+                data:{'polygonJson':JSON.stringify(points)},
+                dataType:'json',
+                success: function(data){
+                    if(data=="success")
+                        alert("提交成功");
+                    else
+                        alert("提交失败，请稍后再试");
+                    return;
+                }
+            });
+        }
+
+        //画多边形
+        if (e.drawingMode == BMAP_DRAWING_POLYGON ) {
+
+            var points = new Array();
+            points = e.overlay.getPath();
+            // console.log(points);
+            result += ' 所画的点个数：' + e.overlay.getPath().length;
+            result += "<br>";
+            result += " 所画的点的坐标集合：" ;
+            result += "<br>";
+
+            for (var i = 0; i<points.length;i++){
+                // console.log(points[i].lng);
+                result += ' 经度：' + points[i].lng;
+                result += ' 纬度：' + points[i].lat;
+                result += "<br>";
+            }
+
+            //不是overlays,e.overlay.getPath()出来的才是所有点的数组
+            var secRingPolygon=new BMap.Polygon(e.overlay.getPath());
+
+            //之后传入定位用的point
+            // var point = new BMap.Point(110.307239,21.159671);
+            var newPosition = getCurrentLocation();
+            console.log("newPosition:"+newPosition);
+            var newPoint = new BMap.Point(newPosition[0],newPosition[1]);
+            console.log("newPoint:"+newPoint);
+
+            if(newPoint != undefined){
+                showInfo(secRingPolygon,newPoint);
+            }else {
+                alert("point is undefined");
+            }
+
+            jQuery.ajax({
+                async: false,
+                url:'http://47.101.181.42:8080/polygon/addPolygon',
+                type:'POST',
+                data:{'polygonJson':JSON.stringify(points)},
+                dataType:'json',
+                success: function(data){
+                    if(data=="success")
+                        alert("提交成功");
+                    else
+                        alert("提交失败，请稍后再试");
+                    return;
+                }
+            });
+        }
+
+        //画矩形
+        if(e.drawingMode == BMAP_DRAWING_RECTANGLE){
+
+            var points = new Array();
+            points = e.overlay.getPath();
+           // console.log(points);
+            result += ' 所画的点个数：' + e.overlay.getPath().length;
+            result += "<br>";
+            result += " 所画的点的坐标集合：" ;
+            result += "<br>";
+
+            for (var i = 0; i<points.length;i++){
+               // console.log(points[i].lng);
+                result += ' 经度：' + points[i].lng;
+                result += ' 纬度：' + points[i].lat;
+                result += "<br>";
+            }
+
+
+            var secRectangle = new BMap.Polygon(e.overlay.getPath());
+            // console.log(e.overlay.getPath());
+            // console.log(secRectangle);
+
+            //之后的点全部由定位得到
+             //var point = new BMap.Point(110.307239,21.159671);
+
+            var newPosition = getCurrentLocation();
+            console.log("newPosition:"+newPosition);
+            var newPoint = new BMap.Point(newPosition[0],newPosition[1]);
+
+           // var newPoint = changeMarkerPosition();
+            console.log("newPoint:"+newPoint);
+            if(newPoint != undefined){
+                console.log("进入if语句");
+                showInfo(secRectangle,newPoint);
+            }else {
+                alert("point is undefined");
+            }
+            //showInfo(secRectangle,newPoint);
+
+            jQuery.ajax({
+                async: false,
+                url:'http://47.101.181.42:8080/polygon/addPolygon',
+                type:'POST',
+                data:{'polygonJson':JSON.stringify(points)},
+                dataType:'json',
+                success: function(data){
+                    if(data=="success")
+                        alert("提交成功");
+                    else
+                        alert("提交失败，请稍后再试");
+                    return;
+                }
+            });
+        }
+
+        //用线画多边形
+        if(e.drawingMode == BMAP_DRAWING_POLYLINE){
+
+            var points = new Array();
+            points = e.overlay.getPath();
+            // console.log(points);
+            result += ' 所画的点个数：' + e.overlay.getPath().length;
+            result += "<br>";
+            result += " 所画的点的坐标集合：" ;
+            result += "<br>";
+
+            for (var i = 0; i<points.length;i++){
+                // console.log(points[i].lng);
+                result += ' 经度：' + points[i].lng;
+                result += ' 纬度：' + points[i].lat;
+                result += "<br>";
+            }
+
+            var secPolyline = new BMap.Polygon(e.overlay.getPath());
+            console.log(secPolyline);
+
+            //之后的点全部由定位得到
+           // var point = new BMap.Point(110.307239,21.159671);
+
+            var newPosition = getCurrentLocation();
+            console.log("newPosition:"+newPosition);
+            var newPoint = new BMap.Point(newPosition[0],newPosition[1]);
+
+            // var newPoint = changeMarkerPosition();
+            console.log("newPoint:"+newPoint);
+            if(newPoint != undefined){
+                console.log("进入if语句");
+                showInfo(secPolyline,newPoint);
+            }else {
+                alert("point is undefined");
+            }
+
+            jQuery.ajax({
+                async: false,
+                url:'http://47.101.181.42:8080/polygon/addPolygon',
+                type:'POST',
+                data:{'polygonJson':JSON.stringify(points)},
+                dataType:'json',
+                success: function(data){
+                    if(data=="success")
+                        alert("提交成功");
+                    else
+                        alert("提交失败，请稍后再试");
+                    return;
+                }
+            });
+        }
+
+
+        result += "</p>";
+
+        c("showOverlayInfo").style.display = "none";
+
+        c("panel").innerHTML += result; //将绘制的覆盖物信息结果输出到结果面板
+
+    };
+
+    function showInfo(secRingPolygon,point) {
+
+        console.log("进入showInfo方法");
+         marker = new BMap.Marker(point);
+        map.addOverlay(marker);
+        console.log("进入showInfo方法的覆盖物"+secRingPolygon);
+        console.log("进入showInfo方法的点"+point);
+        //判断点是否在
+        if(BMapLib.GeoUtils.isPointInPolygon(point,secRingPolygon)){
+           // alert("在区域内");
+            var infoWindow = new BMap.InfoWindow("在区域内");
+            marker.openInfoWindow(infoWindow); //图片加载完后重绘infoWindow
+        }else
+        {
+          //  alert("不在区域内");
+            console.log(secRingPolygon);
+            var infoWindow = new BMap.InfoWindow("不在区域内");
+            marker.openInfoWindow(infoWindow); //图片加载完后重绘infoWindow
+        }
+       // map.removeEventListener("click");
+    }
+
+    var styleOptions = {
+
+        strokeColor:"red",    //边线颜色。
+
+        fillColor:"red",      //填充颜色。当参数为空时，圆形将没有填充效果。
+
+        strokeWeight: 3,       //边线的宽度，以像素为单位。
+
+        strokeOpacity: 0.8,	   //边线透明度，取值范围0 - 1。
+
+        fillOpacity: 0.6,      //填充的透明度，取值范围0 - 1。
+
+        strokeStyle: 'solid' //边线的样式，solid或dashed。
+
+    };
+
+    //实例化鼠标绘制工具
+    var drawingManager = new BMapLib.DrawingManager(map, {
+
+        isOpen: false, //是否开启绘制模式
+
+        enableDrawingTool: true, //是否显示工具栏
+
+        drawingToolOptions: {
+
+            anchor: BMAP_ANCHOR_TOP_RIGHT, //位置
+
+            offset: new BMap.Size(5, 5), //偏离值
+
+            scale: 0.8 //工具栏缩放比例
+
+        },
+
+        circleOptions: styleOptions, //圆的样式
+
+        polylineOptions: styleOptions, //线的样式
+
+        polygonOptions: styleOptions, //多边形的样式
+
+        rectangleOptions: styleOptions //矩形的样式
+
+    });
+
+    //添加鼠标绘制工具监听事件，用于获取绘制结果
+    drawingManager.addEventListener('overlaycomplete', overlaycomplete);
+
+    function c(id){
+        return document.getElementById(id);
+    }
+
+    //清除覆盖物
+    function clearAll() {
+
+        for(var i = 0; i < overlays.length; i++){
+            map.removeOverlay(overlays[i]);
+        }
+        overlays.length = 0;
+
+        //清除标记
+        map.removeOverlay(marker);
+
+    }
+
+    //初始默认不弹出
+    var isPanelShow = false;
+
+    //div的id
+    c("showPanelBtn").onclick = showPanel;
+
+    //弹窗
+    function showPanel(){
+
+        if (isPanelShow == false) {
+            isPanelShow = true;
+            c("showPanelBtn").style.right = "230px";
+            c("panelWrap").style.width = "230px";
+            c("map").style.marginRight = "230px";
+            c("showPanelBtn").innerHTML = "隐藏绘制结果信息<br/>>";
+        } else {
+            isPanelShow = false;
+            c("showPanelBtn").style.right = "0px";
+            c("panelWrap").style.width = "0px";
+            c("map").style.marginRight = "0px";
+            c("showPanelBtn").innerHTML = "显示绘制结果信息<br/><";
+        }
+    }
+
+    //发送输入框的数据到后台
+    function sendToBack() {
+        var string = document.getElementById("inputString").value;
+        alert(string);
+
+        //发送到后台
+        jQuery.ajax({
+            async: false,
+            url:'http://47.101.181.42:8080/serialPort/sendToPort',
+            type:'POST',
+            data:{'string': string},
+            dataType:'json',
+            success:function (data) {
+                alert(data);
+            }
+        });
+    }
+    // 用经纬度设置地图中心点
+    //百度源码
+    function theLocation(){
+        if(document.getElementById("longitude").value != "" && document.getElementById("latitude").value != ""){
+            map.clearOverlays();
+            var new_point = new BMap.Point(document.getElementById("longitude").value,document.getElementById("latitude").value);
+            var marker = new BMap.Marker(new_point);  // 创建标注
+            map.addOverlay(marker);              // 将标注添加到地图中
+            map.panTo(new_point);
+        }
+    }
+
+    function getCurrentLocation() {
+        var position=new Array();
+        console.log("执行了getCurrentLocation");
+        jQuery.ajax({
+            async: false,
+            url:'http://47.101.181.42:8080/serialPort/sendLocation',
+            type:'GET',
+            dataType:'json',
+            success: function(jsonArray){
+                console.log("jsonArray:"+jsonArray);
+                console.log("成功");
+                console.log("jsonArray[0].longitude:"+jsonArray[0].longitude);
+                console.log("jsonArray[0].latitude:"+jsonArray[0].latitude);
+                position.push(jsonArray[0].longitude);
+                position.push( jsonArray[0].latitude);
+                console.log("position"+position);
+            },
+            error :function () {
+                alert("error");
+                console.log("失败")
+            }
+        });
+
+        return position;
+    }
+
+    function changeMarkerPosition() {
+        console.log("执行了changeMarkerPosition");
+        myPositon = getCurrentLocation();
+        var new_point;
+
+        setTimeout(function () {
+            map.clearOverlays();
+            //经度在前纬度在后
+            new_point = new BMap.Point(myPositon[0],myPositon[1]);
+            //var  carIcon = new BMap.Icon("http://lbsyun.baidu.com/jsdemo/img/car.png", new BMap.Size(300,157));//创建一个小车的图标
+            // var marker = new BMap.Marker(new_point,{icon:carIcon});  // 创建标注
+            var marker = new BMap.Marker(new_point);  // 创建标注
+            map.addOverlay(marker);              // 将标注添加到地图中
+            marker.setAnimation(BMAP_ANIMATION_BOUNCE);//给marker设置动画
+            map.panTo(new_point);
+        },500);
+
+        console.log("new_point:"+new_point);
+      // return new_point;
+    }
+
+</script>
+
+
+
+
+
+
+

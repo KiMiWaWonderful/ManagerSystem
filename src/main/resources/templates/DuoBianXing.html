@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        body, html{width: 100%;height: 100%;margin:0;font-family:"微软雅黑";}
+        #allmap {width: 100%; height:600px; }
+        #result {width:100%;font-size:12px;}
+        /*dl,dt,dd,ul,li{*/
+            /*margin:0;*/
+            /*padding:0;*/
+            /*list-style:none;*/
+        /*}*/
+        p{font-size:12px;}
+        dt{
+            font-size:14px;
+            font-family:"微软雅黑";
+            font-weight:bold;
+            border-bottom:1px dotted #000;
+            padding:5px 0 5px 5px;
+            margin:5px 0;
+        }
+        dd{
+            padding:5px 0 0 5px;
+        }
+        /*li{*/
+            /*line-height:28px;*/
+        /*}*/
+        * {
+            margin: 0;
+            padding: 0;
+            padding: 0;
+            font-size: 13pt;
+            /*background: #f9f9f9;*/
+        }
+        #menu {
+            font:12px verdana, arial, sans-serif;
+            /*background: #f9f9f9;*/
+        }
+        #menu, #menu li {
+            list-style:none;
+            padding:0;
+            margin:0;
+            /*background: #f9f9f9;*/
+        }
+        #menu ul {
+            display: inline;
+            position: absolute;
+            width: 100%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            /*背景颜色，为灰色*/
+            background: #f9f9f9;
+        }
+        #menu li {
+            float:left;
+            position: relative;
+            padding: 20px;
+            font-size: 24px;
+            /*background:#00A600;*/
+            /*color: #ffffff;*/
+            line-height: 1;
+            transition: 0.2s all linear;
+            cursor: pointer;
+            list-style: none;
+            /*背景颜色，为灰色*/
+            background: #f9f9f9;
+            margin: auto;
+        }
+        #menu li a {
+            /*background:#fff;*/
+            display:block;
+            /* 如果是中英文混排的文字，建议用固定宽度
+            width:150px;
+            height:30px;
+            line-height:30px;
+            text-align:center;
+            */
+            padding:8px 50px;
+            /*background:#3A4953;*/
+            /*color:#000;*/
+            text-decoration:none;
+            /*border-right:1px solid #000;*/
+        }
+        #menu li a:hover {
+            /*悬浮之后背景改变的颜色*/
+            background:#f9f9f9;
+            /*悬浮之后字体改变的颜色*/
+            /*color:#fff;*/
+            text-decoration:none;
+            /*border-right:1px solid #000;*/
+        }
+        #menu li a.last {
+            border-right:0; /* 去掉左侧边框 */
+        }
+        #menu li:active {
+            /*background: #000;*/
+            color: #fff;
+        }
+    </style>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=qVixkQ96uQ7eQ2WpRYzGeaV4LfOqByaw"></script>
+    <!--加载鼠标绘制工具-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
+    <!--加载检索信息窗口-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/SearchInfoWindow/1.4/src/SearchInfoWindow_min.js"></script>
+    <link rel="stylesheet" href="http://api.map.baidu.com/library/SearchInfoWindow/1.4/src/SearchInfoWindow_min.css" />
+    <!--判断点是否在某个区域内-->
+    <script type="text/javascript" src="http://api.map.baidu.com/library/GeoUtils/1.2/src/GeoUtils_min.js"></script>
+    <!--JQuery-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.0/jquery.js"></script>
+    <!--bootstrap-->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <title>绘图</title>
+</head>
+<body>
+<nav>
+    <ul id="menu">
+        <li><a href="http://47.101.181.42:8080/HomePage">首页</a></li>
+        <li><a href="http://47.101.181.42:8080/Map">地图</a></li>
+        <li><a href="http://47.101.181.42:8080/Locate">定位</a></li>
+        <li><a href="http://47.101.181.42:8080/LocateAndDraw">定位和绘图</a></li>
+    </ul>
+    <ul>
+        <div style="text-align: right;padding-top:30px";>
+            <button type="button" class="btn btn-info btn-lgt" onclick="save()">
+                保存
+                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+            </button>
+
+            <!--<input type="button" value="保存" onclick="save()">-->
+        </div>
+    </ul>
+</nav>
+
+<div id="allmap" style="overflow:hidden;zoom:1;position:relative;">
+    <div id="map" style="height:100%;-webkit-transition: all 0.5s ease-in-out;transition: all 0.5s ease-in-out;"></div>
+</div>
+
+<script type="text/javascript">
+    // 百度地图API功能
+    var map = new BMap.Map("allmap",{minZoom:14,maxZoom:19});
+    // var point = new BMap.Point(104.072222, 30.663469);
+    // map.centerAndZoom(point, 12);
+    map.centerAndZoom("广东海洋大学",17);
+    map.enableScrollWheelZoom(true);
+
+    var navigationControl = new BMap.NavigationControl({
+        anchor : BMAP_ANCHOR_TOP_LEFT,
+        type : BMAP_NAVIGATION_CONTROL_LARGE,
+        enableGeolocation : true
+    });
+    map.addControl(navigationControl);
+
+    //自己拾取的点
+    var point;
+    //多边形的所有点
+    var points=new Array();
+    //描绘多边形的点数
+    var num=0;
+    //标记
+    var markers=new Array();
+    //定义多边形
+    var secRingPolygon=new BMap.Polygon();
+    //描绘多边形的事件
+    map.addEventListener("click", function(e) {
+        num++;
+        if(num<=3){
+            var point = e.point;
+            var marker = new BMap.Marker(point);
+            map.addOverlay(marker);
+            points.push(point);
+            markers.push(marker);
+            if(num==3){
+                secRingPolygon = new BMap.Polygon(points, {strokeColor:"red", strokeWeight:3, strokeOpacity:0.5});  //画多边形
+                map.addOverlay(secRingPolygon);   //增加多边形
+                secRingPolygon.enableEditing();
+                console.log(secRingPolygon);
+            }
+        }
+        if(num>3){
+            var pointt = e.point;
+            points.push(pointt);
+            markers[0].remove();
+            markers[1].remove();
+            markers[2].remove();
+            console.log(secRingPolygon);
+        }
+
+
+    });
+    function save(){
+        if(num>0 && num<3){
+            alert("二级片区至少需要3个点");
+        }else{
+            var ayy=secRingPolygon.getPath();
+            var lngs_value = "";
+            var lats_value = "";
+            for(var i=0;i<ayy.length;i++){
+                if(i!=ayy.length-1){
+                    lngs_value+=secRingPolygon.getPath()[i].lng+",";
+                    lats_value+=secRingPolygon.getPath()[i].lat+",";
+                }else{
+                    lngs_value+=secRingPolygon.getPath()[i].lng;
+                    lats_value+=secRingPolygon.getPath()[i].lat;
+                }
+            }
+            alert("多边形所有点的坐标为："+lngs_value+"|"+lats_value);
+
+
+
+            map.addEventListener("click",function(e){
+                point = new BMap.Point(e.point.lng,e.point.lat);
+                console.log(point);
+                showInfo(point);
+            });
+
+            $.ajax({
+                url:'http://47.101.181.42:8080/polygon/addPolygon',
+                type:'POST',
+                data:{'polygonJson':JSON.stringify(points)},
+                dataType:'json',
+                success: function(data){
+                    if(data=="success")
+                        alert("提交成功");
+                    else
+                        alert("提交失败，请稍后再试");
+                    return;
+                }
+            });
+        }
+    }
+
+    function showInfo(point) {
+
+        //判断点是否在
+        if(BMapLib.GeoUtils.isPointInPolygon(point,secRingPolygon)){
+            alert("在区域内");
+            // var infoWindow = new BMap.InfoWindow("在区域内");
+            // thisMarker.openInfoWindow(infoWindow); //图片加载完后重绘infoWindow
+        }else
+        {
+            alert("不在区域内");
+            console.log(secRingPolygon);
+            // var infoWindow = new BMap.InfoWindow("不在区域内");
+            // thisMarker.openInfoWindow(infoWindow); //图片加载完后重绘infoWindow
+        }
+        map.removeEventListener("click");
+    }
+
+
+
+</script>
+</body>
+</html>
