@@ -1,6 +1,5 @@
 spring:
   mvc:
-#    static-path-pattern: /static/**
     static-path-pattern: /**
   thymeleaf:
 #      #缓冲的配置
